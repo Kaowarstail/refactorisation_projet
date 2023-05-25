@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class UserController extends AbstractController
 {
     #[Route('/users', name: 'liste_des_users', method:['GET'])]
-    public function ListUsers(EntityManagerInterface $entityManager): JsonResponse
+    public function getListeDesUsers(EntityManagerInterface $entityManager): JsonResponse
     {
         $data = $entityManager->getRepository(User::class)->findAll();
         
@@ -46,11 +46,21 @@ class UserController extends AbstractController
                 ->getForm();
 
             $form->submit($data);
+            
+            if(!($form->isValid())){
+                return new JsonResponse('Wrong method', 405);
+            }
 
-            if($form->isValid())
-            {
+            if(!($data['age'] > 21)){
+                $user = $entityManager->getRepository(User::class)->findBy(['name'=>$data['nom']]);
+                return new JsonResponse('Wrong age', 400);
+                
+            }
+
+
                 if($data['age'] > 21){
                     $user = $entityManager->getRepository(User::class)->findBy(['name'=>$data['nom']]);
+                    
                     if(count($user) === 0){
                         $player = new User();
                         $player->setName($data['nom']);
@@ -72,9 +82,7 @@ class UserController extends AbstractController
             }else{
                 return new JsonResponse('Invalid form', 400);
             }
-        }else{
-            return new JsonResponse('Wrong method', 405);
-        }
+
     }
 
     #[Route('/user/{id}', name: 'get_user_by_id', method:['GET'])]
